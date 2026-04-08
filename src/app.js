@@ -1,5 +1,7 @@
 require('./config/env'); // validate env vars first
 const express = require('express');
+const helmet = require('helmet');
+const compression = require('compression');
 const cors = require('cors');
 const morgan = require('morgan');
 const { apiLimiter } = require('./middleware/rateLimiter');
@@ -16,6 +18,8 @@ const contactRoutes = require('./routes/contactRoutes');
 const app = express();
 
 // ─── Global Middleware ────────────────────────────────────────────────────────
+app.use(helmet()); // Set security headers
+app.use(compression()); // Compress all responses
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],

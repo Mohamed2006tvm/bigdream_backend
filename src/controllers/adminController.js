@@ -175,13 +175,13 @@ const manualBooking = async (req, res, next) => {
 const updateScreenSlots = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { slots, is_active } = req.body;
+    const { slots } = req.body;
 
     if (!Array.isArray(slots) || slots.length === 0) {
       return errorResponse(res, 'Time slots must be a non-empty array', 400);
     }
 
-    const updated = await screenModel.updateScreenSlots(id, slots, is_active !== undefined ? is_active : true);
+    const updated = await screenModel.updateScreenSlots(id, slots);
     if (!updated) {
       return errorResponse(res, 'Screen not found', 404);
     }
