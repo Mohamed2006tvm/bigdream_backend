@@ -6,10 +6,6 @@ const required = [
   'SMTP_USER',
   'SMTP_PASS',
   'EMAIL_FROM',
-  'TWILIO_ACCOUNT_SID',
-  'TWILIO_AUTH_TOKEN',
-  'TWILIO_WHATSAPP_FROM',
-  'TWILIO_ADMIN_PHONE',
 ];
 
 const missing = required.filter((key) => !process.env[key]);
@@ -27,10 +23,6 @@ module.exports = {
   smtpUser: process.env.SMTP_USER,
   smtpPass: process.env.SMTP_PASS,
   emailFrom: process.env.EMAIL_FROM,
-  twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,
-  twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
-  twilioWhatsappFrom: process.env.TWILIO_WHATSAPP_FROM,
-  twilioAdminPhone: process.env.TWILIO_ADMIN_PHONE,
   appName: process.env.APP_NAME || 'Event Hall Booking',
   frontendUrl: process.env.FRONTEND_URL || '*',
 };
