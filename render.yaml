@@ -1,0 +1,52 @@
+services:
+  # Backend Web Service — Render (Node.js)
+  - type: web
+    name: bigdream-backend
+    env: node
+    rootDir: backEnd
+    buildCommand: npm install
+    startCommand: npm run db:init && npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: event-hall-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: APP_NAME
+        value: My Big Dream
+      - key: FRONTEND_URL
+        value: https://mybigdream.vercel.app
+      # ── Set these manually in Render Dashboard → Environment ──
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        sync: false
+      - key: TWILIO_ADMIN_PHONE
+        sync: false
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+
+databases:
+  - name: event-hall-db
+    databaseName: eventdb
+    user: postgres
+    plan: free
+    # NOTE: Render free databases expire after 90 days. Upgrade for production.
