@@ -32,12 +32,12 @@ const getAllMessages = async ({ page = 1, limit = 20 } = {}) => {
 };
 
 /**
- * Mark a message as read.
+ * Update message read status.
  */
-const markAsRead = async (id) => {
+const updateInquiryStatus = async (id, isRead) => {
   const { rows } = await db.query(
-    'UPDATE contact_messages SET is_read = TRUE WHERE id = $1 RETURNING *',
-    [id]
+    'UPDATE contact_messages SET is_read = $2 WHERE id = $1 RETURNING *',
+    [id, isRead]
   );
   return rows[0];
 };
@@ -52,6 +52,6 @@ const deleteMessage = async (id) => {
 module.exports = {
   createMessage,
   getAllMessages,
-  markAsRead,
+  updateInquiryStatus,
   deleteMessage
 };

@@ -1,9 +1,16 @@
 const { Pool } = require('pg');
+const env = require('./env');
 const logger = require('../utils/logger');
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('render.com') ? { rejectUnauthorized: false } : false,
+  connectionString: env.databaseUrl,
+  // Force SSL for Render or any remote DB; only disable for localhost
+  ssl: (env.databaseUrl.includes('localhost') || env.databaseUrl.includes('127.0.0.1')) ? false : { rejectUnauthorized: false },
+  // Connection pool limits
+  max: 10,
+  min: 2,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000, // Increased timeout
 });
 
 pool.on('connect', () => {
@@ -11,15 +18,30 @@ pool.on('connect', () => {
 });
 
 pool.on('error', (err) => {
-  logger.error('Unexpected database error', { error: err.message });
-  process.exit(-1);
+  logger.error('Unexpected database pool error', { error: err.message });
 });
 
 /**
  * Execute a parameterized query against the pool.
- * @param {string} text   - SQL query string
- * @param {Array}  params - Query parameters
  */
 const query = (text, params) => pool.query(text, params);
 
-module.exports = { query, pool };
+/**
+ * Verify database connectivity. Used by server startup & /health endpoint.
+ */
+const healthCheck = async () => {
+  const client = await pool.connect();
+  try {
+    await client.query('SELECT 1');
+    return true;
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * Gracefully drain and close all pool connections.
+ */
+const closePool = () => pool.end();
+
+module.exports = { query, pool, healthCheck, closePool };

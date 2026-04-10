@@ -20,6 +20,10 @@ const createBooking = async (req, res, next) => {
       return errorResponse(res, `Screen '${screen_name}' not found`, 404);
     }
 
+    if (screen.is_active === false) {
+      return errorResponse(res, `Screen '${screen_name}' is currently unavailable for bookings`, 403);
+    }
+
     // Check for conflicts
     const conflict = await bookingModel.findConflict(screen.id, date, time_slot);
     if (conflict) {

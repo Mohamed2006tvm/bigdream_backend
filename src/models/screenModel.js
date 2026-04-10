@@ -12,11 +12,11 @@ const getScreenByName = async (name) => {
   return rows[0] || null;
 };
 
-/** Update slots for a screen */
-const updateScreenSlots = async (id, slots) => {
+/** Update slots and active status for a screen */
+const updateScreenSlots = async (id, slots, isActive) => {
   const { rows } = await db.query(
-    'UPDATE screens SET time_slots = $2 WHERE id = $1 RETURNING *',
-    [id, JSON.stringify(slots)]
+    'UPDATE screens SET time_slots = $2, is_active = $3 WHERE id = $1 RETURNING *',
+    [id, JSON.stringify(slots), isActive]
   );
   return rows[0];
 };

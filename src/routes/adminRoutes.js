@@ -6,40 +6,39 @@ const {
   blockSlot,
   manualBooking,
   updateScreenSlots,
+  getScreens,
 } = require('../controllers/adminController');
 const contactModel = require('../models/contactModel');
-const { successResponse, errorResponse } = require('../utils/responseHelper');
+const { successResponse } = require('../utils/responseHelper');
 const Setting = require('../models/settingModel');
 const { authenticate } = require('../middleware/auth');
 const { updateBookingRules, blockSlotRules, createBookingRules } = require('../middleware/validationRules');
 const { validate } = require('../middleware/validate');
+const { bookingLimiter } = require('../middleware/rateLimiter');
 
 // All admin routes are protected by JWT
 router.use(authenticate);
 
 /**
  * GET /api/admin/bookings?page=1&limit=20
- * Return all bookings (paginated).
  */
 router.get('/bookings', getAllBookings);
 
 /**
  * PATCH /api/admin/bookings/:id
- * Update booking status or time_slot.
  */
 router.patch('/bookings/:id', updateBookingRules, validate, updateBooking);
 
 /**
  * POST /api/admin/block-slot
- * Block a slot as cleaning or maintenance.
  */
 router.post('/block-slot', blockSlotRules, validate, blockSlot);
 
 /**
  * POST /api/admin/manual-booking
- * Admin creates a booking manually.
+ * Apply booking limiter even for admin manual entries
  */
-router.post('/manual-booking', createBookingRules, validate, manualBooking);
+router.post('/manual-booking', bookingLimiter, createBookingRules, validate, manualBooking);
 
 /**
  * PATCH /api/admin/screens/:id/slots
@@ -49,12 +48,7 @@ router.patch('/screens/:id/slots', updateScreenSlots);
 /**
  * GET /api/admin/screens
  */
-router.get('/screens', async (req, res, next) => {
-  try {
-    const { getScreens } = require('../controllers/adminController');
-    return getScreens(req, res, next);
-  } catch (err) { next(err); }
-});
+router.get('/screens', getScreens);
 
 /**
  * Message Management
@@ -62,14 +56,18 @@ router.get('/screens', async (req, res, next) => {
 router.get('/messages', async (req, res, next) => {
   try {
     const { page = 1, limit = 20 } = req.query;
-    const data = await contactModel.getAllMessages({ page: parseInt(page), limit: parseInt(limit) });
+    const data = await contactModel.getAllMessages({
+      page: parseInt(page, 10),
+      limit: Math.min(parseInt(limit, 10), 100),
+    });
     return successResponse(res, data);
   } catch (err) { next(err); }
 });
 
 router.patch('/messages/:id/read', async (req, res, next) => {
   try {
-    const data = await contactModel.markAsRead(req.params.id);
+    const { is_read } = req.body;
+    const data = await contactModel.updateInquiryStatus(req.params.id, is_read !== false);
     return successResponse(res, data);
   } catch (err) { next(err); }
 });

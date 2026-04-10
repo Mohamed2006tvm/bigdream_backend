@@ -1,5 +1,6 @@
 const { validationResult } = require('express-validator');
 const { errorResponse } = require('../utils/responseHelper');
+const logger = require('../utils/logger');
 
 /**
  * Middleware: Run after express-validator checks.

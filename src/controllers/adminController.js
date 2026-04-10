@@ -8,21 +8,33 @@ const { successResponse, errorResponse } = require('../utils/responseHelper');
 const env = require('../config/env');
 const logger = require('../utils/logger');
 
+/** Cookie options for JWT — HttpOnly prevents JS access (XSS mitigation) */
+const cookieOptions = {
+  httpOnly: true,
+  secure: env.isProd, // HTTPS only in production
+  sameSite: env.isProd ? 'none' : 'lax', // 'none' needed for cross-origin cookie (Vercel → Render)
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+  path: '/',
+};
+
 /**
  * POST /api/auth/login
- * Admin login — returns a signed JWT.
+ * Admin login — sets JWT as HttpOnly cookie AND returns it in body.
  */
 const login = async (req, res, next) => {
   try {
     const { username, password } = req.body;
+    const ip = req.ip || req.connection?.remoteAddress || 'unknown';
 
     const admin = await adminModel.findAdminByUsername(username);
     if (!admin) {
+      logger.warn('Failed login attempt — user not found', { username, ip });
       return errorResponse(res, 'Invalid credentials', 401);
     }
 
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
+      logger.warn('Failed login attempt — wrong password', { username, ip });
       return errorResponse(res, 'Invalid credentials', 401);
     }
 
@@ -32,12 +44,29 @@ const login = async (req, res, next) => {
       { expiresIn: env.jwtExpiresIn }
     );
 
-    logger.info('Admin login successful', { username: admin.username });
+    // Set secure HttpOnly cookie
+    res.cookie('auth_token', token, cookieOptions);
 
-    return successResponse(res, { token, admin: { id: admin.id, username: admin.username } }, 200, 'Login successful');
+    logger.info('Admin login successful', { username: admin.username, ip });
+
+    return successResponse(
+      res,
+      { token, admin: { id: admin.id, username: admin.username } },
+      200,
+      'Login successful'
+    );
   } catch (err) {
     next(err);
   }
+};
+
+/**
+ * POST /api/auth/logout
+ * Clear the auth cookie.
+ */
+const logout = (req, res) => {
+  res.clearCookie('auth_token', { ...cookieOptions, maxAge: 0 });
+  return successResponse(res, null, 200, 'Logged out successfully');
 };
 
 /**
@@ -64,22 +93,25 @@ const getAllBookings = async (req, res, next) => {
 const updateBooking = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { status, time_slot } = req.body;
+    const { status, time_slot, screen_id } = req.body;
 
     const existing = await bookingModel.getBookingById(id);
     if (!existing) {
       return errorResponse(res, 'Booking not found', 404);
     }
 
-    // If updating time_slot, check for conflicts on the new slot
-    if (time_slot && time_slot !== existing.time_slot) {
-      const conflict = await bookingModel.findConflict(existing.screen_id, existing.date, time_slot);
+    const targetScreenId = screen_id || existing.screen_id;
+    const targetTimeSlot = time_slot || existing.time_slot;
+
+    // If updating time_slot or screen_id, check for conflicts on the new hall/slot
+    if ((time_slot && time_slot !== existing.time_slot) || (screen_id && screen_id !== existing.screen_id)) {
+      const conflict = await bookingModel.findConflict(targetScreenId, existing.date, targetTimeSlot);
       if (conflict && conflict.id !== id) {
-        return errorResponse(res, 'The new time slot is already booked for this screen and date.', 409);
+        return errorResponse(res, 'The new time slot or hall is already booked for this date.', 409);
       }
     }
 
-    const updated = await bookingModel.updateBooking(id, { status, time_slot });
+    const updated = await bookingModel.updateBooking(id, { status, time_slot, screen_id });
     return successResponse(res, updated, 200, 'Booking updated successfully');
   } catch (err) {
     next(err);
@@ -129,8 +161,7 @@ const blockSlot = async (req, res, next) => {
 
 /**
  * POST /api/admin/manual-booking
- * Admin manually creates a booking (same logic as user, bypasses rate limiter).
- * Also sends notifications.
+ * Admin manually creates a booking. Also sends notifications.
  */
 const manualBooking = async (req, res, next) => {
   try {
@@ -175,13 +206,13 @@ const manualBooking = async (req, res, next) => {
 const updateScreenSlots = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { slots } = req.body;
+    const { slots, is_active } = req.body;
 
     if (!Array.isArray(slots) || slots.length === 0) {
       return errorResponse(res, 'Time slots must be a non-empty array', 400);
     }
 
-    const updated = await screenModel.updateScreenSlots(id, slots);
+    const updated = await screenModel.updateScreenSlots(id, slots, is_active !== false);
     if (!updated) {
       return errorResponse(res, 'Screen not found', 404);
     }
@@ -191,6 +222,7 @@ const updateScreenSlots = async (req, res, next) => {
     next(err);
   }
 };
+
 /**
  * GET /api/admin/screens
  * Return all screens for admin management.
@@ -204,4 +236,4 @@ const getScreens = async (req, res, next) => {
   }
 };
 
-module.exports = { login, getAllBookings, updateBooking, blockSlot, manualBooking, updateScreenSlots, getScreens };
+module.exports = { login, logout, getAllBookings, updateBooking, blockSlot, manualBooking, updateScreenSlots, getScreens };

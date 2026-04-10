@@ -12,7 +12,8 @@ END $$;
 CREATE TABLE IF NOT EXISTS screens (
   id   UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
   name VARCHAR(10) UNIQUE NOT NULL,  -- 'A', 'B', 'C'
-  time_slots JSONB NOT NULL DEFAULT '["09:00-12:00", "12:00-15:00", "15:00-18:00", "18:00-21:00", "21:00-00:00"]'::jsonb
+  time_slots JSONB NOT NULL DEFAULT '["09:00-12:00", "12:00-15:00", "15:00-18:00", "18:00-21:00", "21:00-00:00"]'::jsonb,
+  is_active  BOOLEAN DEFAULT TRUE
 );
 
 -- ─── bookings ─────────────────────────────────────────────────────────────────

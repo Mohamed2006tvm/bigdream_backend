@@ -41,8 +41,7 @@ const getAllBookings = async ({ page = 1, limit = 20, search = '' } = {}) => {
   }
 
   const query = `
-    SELECT b.*, s.name AS screen_name,
-      (b.date < CURRENT_DATE OR (b.date = CURRENT_DATE AND split_part(b.time_slot, '-', 2)::time < CURRENT_TIME)) AS is_completed
+    SELECT b.*, s.name AS screen_name
     FROM bookings b
     JOIN screens s ON s.id = b.screen_id
     ${searchClause}
@@ -82,7 +81,7 @@ const getBookingById = async (id) => {
  * Only provided keys are updated.
  */
 const updateBooking = async (id, fields) => {
-  const allowed = ['status', 'time_slot'];
+  const allowed = ['status', 'time_slot', 'screen_id'];
   const updates = [];
   const values = [];
 
