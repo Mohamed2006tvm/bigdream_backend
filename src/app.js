@@ -63,7 +63,7 @@ app.use(compression());
 // ─── CORS — Strict origin, no wildcard fallback in production ────────────────
 const allowedOrigins = env.isProd
   ? [env.frontendUrl]
-  : [env.frontendUrl, 'http://localhost:5173', 'http://localhost:3000'];
+  : [env.frontendUrl, 'http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:41821', 'http://localhost:41821'];
 
 app.use(
   cors({
