@@ -1,9 +1,8 @@
 const app = require('./app');
-const env = require('./config/env');
 const { healthCheck, closePool } = require('./config/db');
 const logger = require('./utils/logger');
 
-const PORT = env.port;
+const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   // ─── Verify DB connectivity before accepting traffic ─────────────────────
@@ -16,23 +15,19 @@ const startServer = async () => {
     process.exit(1);
   }
 
-  const server = app.listen(PORT, () => {
-    logger.info(`🚀 ${env.appName} server running on port ${PORT} [${env.nodeEnv}]`);
-  });
+  app.listen(PORT, '0.0.0.0');
 
   // ─── Graceful Shutdown ──────────────────────────────────────────────────
   const shutdown = async (signal) => {
     logger.info(`${signal} received. Shutting down gracefully...`);
-    server.close(async () => {
-      logger.info('HTTP server closed');
-      try {
-        await closePool();
-        logger.info('Database pool closed');
-      } catch (err) {
-        logger.error('Error closing DB pool', { error: err.message });
-      }
-      process.exit(0);
-    });
+    logger.info('HTTP server close hook skipped');
+    try {
+      await closePool();
+      logger.info('Database pool closed');
+    } catch (err) {
+      logger.error('Error closing DB pool', { error: err.message });
+    }
+    process.exit(0);
 
     // Force shutdown after 10 seconds if requests hang
     setTimeout(() => {
