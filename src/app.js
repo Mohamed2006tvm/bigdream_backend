@@ -33,11 +33,18 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "https://www.googletagmanager.com", "https://www.google-analytics.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: ["'self'", env.frontendUrl],
-        fontSrc: ["'self'"],
+        connectSrc: [
+          "'self'", 
+          env.frontendUrl,
+          "https://bigdream-backend.onrender.com",
+          "https://bigdream-backend-fo1m.onrender.com",
+          "https://bigdream-backend-wfvr.onrender.com",
+          "https://www.google-analytics.com"
+        ],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'"],
         frameSrc: ["'none'"],
@@ -102,14 +109,9 @@ app.use('/api/settings', settingRoutes);
 app.use('/api/contact', contactRoutes);
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
-app.get('/health', async (req, res) => {
-  try {
-    const { healthCheck } = require('./config/db');
-    await healthCheck();
-    res.json({ status: 'ok', timestamp: new Date().toISOString(), env: env.nodeEnv });
-  } catch (err) {
-    res.status(503).json({ status: 'error', message: 'Database unreachable' });
-  }
+app.get('/health', (req, res) => {
+  // Simple health check – no DB query to keep it fast
+  res.status(200).json({ status: 'ok', message: 'Server is running' });
 });
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
