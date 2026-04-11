@@ -3,9 +3,15 @@ const path = require('path');
 const { Pool } = require('pg');
 require('dotenv').config();
 
+const databaseUrl = process.env.DATABASE_URL || '';
+const useSsl =
+  databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')
+    ? false
+    : { rejectUnauthorized: false };
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: (process.env.NODE_ENV === 'production' || process.env.DATABASE_URL.includes('render.com')) ? { rejectUnauthorized: false } : false,
+  connectionString: databaseUrl,
+  ssl: useSsl,
 });
 
 const runSqlFile = async (filePath) => {

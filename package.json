@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "vercel-build": "node -e \"process.exit(0)\"",
     "db:init": "node src/config/setupDb.js",
     "db:schema": "node src/config/setupDb.js",
     "db:seed": "node src/config/setupDb.js"
@@ -17,7 +18,7 @@
     "bcryptjs": "^2.4.3",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

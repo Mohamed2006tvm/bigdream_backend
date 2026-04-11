@@ -25,6 +25,12 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+/** Comma-separated extra browser origins allowed by CORS (e.g. Vercel preview URLs). */
+const additionalCorsOrigins = (process.env.ADDITIONAL_CORS_ORIGINS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 module.exports = {
   port: parseInt(process.env.PORT, 10) || 3000,
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -37,6 +43,7 @@ module.exports = {
   emailFrom: process.env.EMAIL_FROM,
   appName: process.env.APP_NAME || 'My Big Dream',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+  additionalCorsOrigins,
   twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,
   twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
   twilioWhatsappFrom: process.env.TWILIO_WHATSAPP_FROM,

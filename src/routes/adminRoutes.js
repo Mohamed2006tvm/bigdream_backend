@@ -12,42 +12,15 @@ const contactModel = require('../models/contactModel');
 const { successResponse } = require('../utils/responseHelper');
 const Setting = require('../models/settingModel');
 const { authenticate } = require('../middleware/auth');
-const { updateBookingRules, blockSlotRules, createBookingRules } = require('../middleware/validationRules');
-const { validate } = require('../middleware/validate');
-const { bookingLimiter } = require('../middleware/rateLimiter');
 
 // All admin routes are protected by JWT
 router.use(authenticate);
 
-/**
- * GET /api/admin/bookings?page=1&limit=20
- */
 router.get('/bookings', getAllBookings);
-
-/**
- * PATCH /api/admin/bookings/:id
- */
-router.patch('/bookings/:id', updateBookingRules, validate, updateBooking);
-
-/**
- * POST /api/admin/block-slot
- */
-router.post('/block-slot', blockSlotRules, validate, blockSlot);
-
-/**
- * POST /api/admin/manual-booking
- * Apply booking limiter even for admin manual entries
- */
-router.post('/manual-booking', bookingLimiter, createBookingRules, validate, manualBooking);
-
-/**
- * PATCH /api/admin/screens/:id/slots
- */
+router.patch('/bookings/:id', updateBooking);
+router.post('/block-slot', blockSlot);
+router.post('/manual-booking', manualBooking);
 router.patch('/screens/:id/slots', updateScreenSlots);
-
-/**
- * GET /api/admin/screens
- */
 router.get('/screens', getScreens);
 
 /**

@@ -2,15 +2,17 @@ const { Pool } = require('pg');
 const env = require('./env');
 const logger = require('../utils/logger');
 
+const isVercel = process.env.VERCEL === '1';
+
 const pool = new Pool({
   connectionString: env.databaseUrl,
   // Force SSL for Render or any remote DB; only disable for localhost
   ssl: (env.databaseUrl.includes('localhost') || env.databaseUrl.includes('127.0.0.1')) ? false : { rejectUnauthorized: false },
-  // Connection pool limits
-  max: 10,
-  min: 2,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000, // Increased timeout
+  // Vercel: one short-lived process per invocation — keep pool tiny to protect Neon limits
+  max: isVercel ? 1 : 10,
+  min: isVercel ? 0 : 2,
+  idleTimeoutMillis: isVercel ? 5000 : 30000,
+  connectionTimeoutMillis: 10000,
 });
 
 pool.on('connect', () => {

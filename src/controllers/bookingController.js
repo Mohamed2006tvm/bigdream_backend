@@ -102,32 +102,52 @@ const getAvailability = async (req, res, next) => {
   }
 };
 
+function normalizeAvailabilityConfig(raw) {
+  const fallback = { mode: 'dynamic', days: 7, dates: [] };
+  if (raw == null) return fallback;
+  let obj = raw;
+  if (typeof raw === 'string') {
+    try {
+      obj = JSON.parse(raw);
+    } catch {
+      return fallback;
+    }
+  }
+  if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) return fallback;
+
+  const mode = obj.mode === 'manual' ? 'manual' : 'dynamic';
+  let days = Number(obj.days);
+  if (!Number.isFinite(days) || days < 1) days = 7;
+  if (days > 366) days = 366;
+  const dates = Array.isArray(obj.dates) ? obj.dates.map(String) : [];
+
+  return { mode, days, dates };
+}
+
 /**
  * GET /api/availability/dates
  * Returns the list of dates open for booking based on global settings.
  */
 const getAuthorizedDates = async (req, res, next) => {
   try {
-    let config = await Setting.get('availability_config') || { mode: 'dynamic', days: 7 };
-    
-    if (typeof config === 'string') {
-      try {
-        config = JSON.parse(config);
-      } catch (e) {
-        config = { mode: 'dynamic', days: 7 };
-      }
+    let rawConfig = null;
+    try {
+      rawConfig = await Setting.get('availability_config');
+    } catch (dbErr) {
+      logger.warn('availability_config read failed; using defaults', { error: dbErr.message });
     }
-    
+
+    const config = normalizeAvailabilityConfig(rawConfig);
+
     let dates = [];
     if (config.mode === 'manual') {
-      dates = config.dates || [];
+      dates = config.dates;
     } else {
-      const days = parseInt(config.days || 7, 10);
-      for (let i = 0; i < days; i++) {
+      for (let i = 0; i < config.days; i++) {
         dates.push(format(addDays(new Date(), i), 'yyyy-MM-dd'));
       }
     }
-    
+
     return successResponse(res, dates);
   } catch (err) {
     next(err);
