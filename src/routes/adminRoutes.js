@@ -7,7 +7,10 @@ const {
   manualBooking,
   updateScreenSlots,
   getScreens,
+  changePassword,
 } = require('../controllers/adminController');
+const { changePasswordRules } = require('../middleware/validationRules');
+const { validate } = require('../middleware/validate');
 const contactModel = require('../models/contactModel');
 const { successResponse } = require('../utils/responseHelper');
 const Setting = require('../models/settingModel');
@@ -15,6 +18,8 @@ const { authenticate } = require('../middleware/auth');
 
 // All admin routes are protected by JWT
 router.use(authenticate);
+
+router.patch('/password', changePasswordRules, validate, changePassword);
 
 router.get('/bookings', getAllBookings);
 router.patch('/bookings/:id', updateBooking);

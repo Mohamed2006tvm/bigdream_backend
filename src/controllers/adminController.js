@@ -70,6 +70,43 @@ const logout = (req, res) => {
 };
 
 /**
+ * PATCH /api/admin/password
+ * Authenticated admin changes their own password (current password required).
+ */
+const changePassword = async (req, res, next) => {
+  try {
+    const adminId = req.admin.id;
+    const { currentPassword, newPassword } = req.body;
+
+    const hash = await adminModel.getPasswordHashById(adminId);
+    if (!hash) {
+      return errorResponse(res, 'Admin account not found', 404);
+    }
+
+    const currentOk = await bcrypt.compare(currentPassword, hash);
+    if (!currentOk) {
+      return errorResponse(res, 'Current password is incorrect', 400);
+    }
+
+    const sameAsOld = await bcrypt.compare(newPassword, hash);
+    if (sameAsOld) {
+      return errorResponse(res, 'New password must be different from your current password', 400);
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    const updated = await adminModel.updatePasswordById(adminId, newHash);
+    if (!updated) {
+      return errorResponse(res, 'Could not update password', 500);
+    }
+
+    logger.info('Admin password changed', { adminId, username: req.admin.username });
+    return successResponse(res, null, 200, 'Password updated successfully');
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
  * GET /api/admin/bookings?page=1&limit=20
  * Return all bookings (paginated).
  */
@@ -236,4 +273,14 @@ const getScreens = async (req, res, next) => {
   }
 };
 
-module.exports = { login, logout, getAllBookings, updateBooking, blockSlot, manualBooking, updateScreenSlots, getScreens };
+module.exports = {
+  login,
+  logout,
+  changePassword,
+  getAllBookings,
+  updateBooking,
+  blockSlot,
+  manualBooking,
+  updateScreenSlots,
+  getScreens,
+};

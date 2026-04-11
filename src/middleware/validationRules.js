@@ -90,6 +90,23 @@ const loginRules = [
     .isLength({ max: 200 }),
 ];
 
+const changePasswordRules = [
+  body('currentPassword')
+    .notEmpty()
+    .withMessage('currentPassword is required')
+    .isLength({ max: 200 }),
+  body('newPassword')
+    .isLength({ min: 8, max: 128 })
+    .withMessage('newPassword must be 8–128 characters')
+    .matches(/^(?=.*[A-Za-z])(?=.*\d)/)
+    .withMessage('newPassword must include at least one letter and one number'),
+  body('confirmPassword')
+    .notEmpty()
+    .withMessage('confirmPassword is required')
+    .custom((value, { req }) => value === req.body.newPassword)
+    .withMessage('confirmPassword must match newPassword'),
+];
+
 const contactRules = [
   body('name')
     .trim()
@@ -112,4 +129,11 @@ const contactRules = [
     .withMessage('Message must be between 2 and 2000 characters'),
 ];
 
-module.exports = { createBookingRules, updateBookingRules, blockSlotRules, loginRules, contactRules };
+module.exports = {
+  createBookingRules,
+  updateBookingRules,
+  blockSlotRules,
+  loginRules,
+  changePasswordRules,
+  contactRules,
+};

@@ -18,4 +18,23 @@ const findAdminById = async (id) => {
   return rows[0] || null;
 };
 
-module.exports = { findAdminByUsername, findAdminById };
+/** Bcrypt hash for password verification / rotation (internal use only) */
+const getPasswordHashById = async (id) => {
+  const { rows } = await db.query('SELECT password FROM admin_users WHERE id = $1', [id]);
+  return rows[0]?.password || null;
+};
+
+const updatePasswordById = async (id, hashedPassword) => {
+  const { rowCount } = await db.query('UPDATE admin_users SET password = $2 WHERE id = $1', [
+    id,
+    hashedPassword,
+  ]);
+  return rowCount > 0;
+};
+
+module.exports = {
+  findAdminByUsername,
+  findAdminById,
+  getPasswordHashById,
+  updatePasswordById,
+};

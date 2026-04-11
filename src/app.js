@@ -3,10 +3,12 @@ const express = require('express');
 const compression = require('compression');
 const cors = require('cors');
 const helmet = require('helmet');
+const hpp = require('hpp');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const { errorHandler } = require('./middleware/errorHandler');
 const { requestId } = require('./middleware/requestId');
+const { apiLimiter } = require('./middleware/rateLimiter');
 const logger = require('./utils/logger');
 const env = require('./config/env');
 
@@ -33,6 +35,8 @@ const contactRoutes = require('./routes/contactRoutes');
 
 const app = express();
 
+app.disable('x-powered-by');
+
 // ─── Trust Proxy ─────────────────────────────────────────────────────────────
 app.set('trust proxy', 1);
 
@@ -48,6 +52,10 @@ app.use(
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: { policy: 'cross-origin' },
+    frameguard: { action: 'deny' },
+    hsts: env.isProd
+      ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+      : false,
   })
 );
 
@@ -68,9 +76,10 @@ app.use(
 // ─── Cookie Parser ───────────────────────────────────────────────────────────
 app.use(cookieParser());
 
-// ─── Body Parsing ────────────────────────────────────────────────────────────
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// ─── Body Parsing (size limits reduce abuse of JSON/urlencoded payloads) ─────
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+app.use(hpp());
 
 // ─── HTTP Request Logger ─────────────────────────────────────────────────────
 if (env.nodeEnv !== 'test') {
@@ -84,6 +93,7 @@ if (env.nodeEnv !== 'test') {
 
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
+app.use('/api', apiLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
@@ -100,7 +110,12 @@ app.get('/api/health', healthHandler);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {
-  res.status(404).json({ success: false, message: 'Route not found' });
+  const { requestId: rid } = req;
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+    ...(rid && { requestId: rid }),
+  });
 });
 
 // ─── Centralized Error Handler ───────────────────────────────────────────────
