@@ -48,4 +48,5 @@ module.exports = {
   twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
   twilioWhatsappFrom: process.env.TWILIO_WHATSAPP_FROM,
   twilioAdminPhone: process.env.TWILIO_ADMIN_PHONE,
+  web3formsApiKey: process.env.WEB3FORMS_API_KEY,
 };
