@@ -116,4 +116,84 @@ const sendContactEmail = async ({ name, email, message }) => {
   }
 };
 
-module.exports = { sendBookingConfirmationEmail, sendContactEmail };
+/**
+ * Send admin notification for new booking
+ * @param {object} bookingData - { customer_name, email, phone, screen_name, date, time_slot }
+ */
+const sendAdminBookingNotification = async (bookingData) => {
+  const { customer_name, email, phone, screen_name, date, time_slot } = bookingData;
+  const safeName = escapeHtml(customer_name);
+  const safeEmail = escapeHtml(email);
+  const safePhone = escapeHtml(phone);
+  const safeScreen = escapeHtml(screen_name);
+  const safeTimeSlot = escapeHtml(time_slot);
+  const safeDate = escapeHtml(date);
+  const safeAppName = escapeHtml(env.appName);
+
+  try {
+    const result = await transporter.sendMail({
+      from: env.emailFrom,
+      to: env.smtpUser,
+      replyTo: email,
+      subject: `🎉 New Booking Alert - ${safeScreen} | ${safeAppName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 24px; border: 1px solid #e0e0e0; border-radius: 8px;">
+          <h2 style="color: #1a1a2e;">New Booking Received 🎉</h2>
+          <p>A new booking has been made at <strong>${safeAppName}</strong>.</p>
+          
+          <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0;">
+            <h3 style="color: #333; margin-top: 0;">📋 Booking Details:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px; font-weight: bold; background: #e9ecef; width: 140px;">Customer</td>
+                <td style="padding: 8px;">${safeName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; font-weight: bold; background: #e9ecef;">Email</td>
+                <td style="padding: 8px;">${safeEmail}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; font-weight: bold; background: #e9ecef;">Phone</td>
+                <td style="padding: 8px;">${safePhone}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; font-weight: bold; background: #e9ecef;">Screen</td>
+                <td style="padding: 8px;">Screen ${safeScreen}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; font-weight: bold; background: #e9ecef;">Date</td>
+                <td style="padding: 8px;">${safeDate}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; font-weight: bold; background: #e9ecef;">Time Slot</td>
+                <td style="padding: 8px;">${safeTimeSlot}</td>
+              </tr>
+            </table>
+          </div>
+          
+          <p style="color: #666; font-size: 14px;">
+            💡 <strong>Quick Actions:</strong> Reply to this email to contact the customer directly, or check your admin dashboard for more details.
+          </p>
+          
+          <p style="color: #aaa; font-size: 11px; margin-top: 32px;">
+            This is an automated notification from ${safeAppName} booking system.
+          </p>
+        </div>
+      `,
+    });
+    
+    logger.info('Admin booking notification sent', { 
+      to: env.smtpUser, 
+      customer: safeName,
+      screen: safeScreen,
+      messageId: result.messageId 
+    });
+    
+    return result;
+  } catch (err) {
+    logger.error('Failed to send admin booking notification', { error: err.message, customer: safeName });
+    throw err;
+  }
+};
+
+module.exports = { sendBookingConfirmationEmail, sendContactEmail, sendAdminBookingNotification };
