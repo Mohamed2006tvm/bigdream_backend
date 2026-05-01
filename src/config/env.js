@@ -41,12 +41,11 @@ module.exports = {
   smtpUser: process.env.SMTP_USER,
   smtpPass: process.env.SMTP_PASS,
   emailFrom: process.env.EMAIL_FROM,
-  appName: process.env.APP_NAME || 'My Big Dream',
+  appName: process.env.APP_NAME || 'My Dream Surprise',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
   additionalCorsOrigins,
   twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,
   twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
   twilioWhatsappFrom: process.env.TWILIO_WHATSAPP_FROM,
   twilioAdminPhone: process.env.TWILIO_ADMIN_PHONE,
-  web3formsApiKey: process.env.WEB3FORMS_API_KEY,
 };

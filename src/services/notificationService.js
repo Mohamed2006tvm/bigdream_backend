@@ -16,7 +16,7 @@ const sendBookingConfirmation = async (booking) => {
   const results = await Promise.allSettled(notifications);
 
   results.forEach((result, index) => {
-    const channel = index === 0 ? 'Customer Email' : 'Admin Email';
+    const channel = index === 0 ? 'Customer Email' : 'Admin Notification (Email)';
     if (result.status === 'rejected') {
       logger.warn(`${channel} notification failed`, { reason: result.reason?.message });
     } else {
