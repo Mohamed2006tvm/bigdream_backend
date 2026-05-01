@@ -18,6 +18,8 @@ const allowedOrigins = [
       'http://localhost:5173',
       'http://localhost:5174',
       'https://mybigdream.vercel.app',
+      'https://www.mydreamsurprise.com',
+      'https://mydreamsurprise.com',
       env.frontendUrl,
       'http://127.0.0.1:5173',
       'http://127.0.0.1:5174',
